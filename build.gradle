@@ -1,0 +1,135 @@
+
+
+// Gradle repositories and dependencies
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            name = 'sonatype-nexus-public'
+            url = 'https://oss.sonatype.org/content/repositories/public/'
+        }
+        maven {
+            name = 'forge-repo'
+            url = 'http://files.minecraftforge.net/maven/'
+        }
+        jcenter()
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:1.2-SNAPSHOT'
+        classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.11.0'
+    }
+}
+
+// Default tasks
+defaultTasks 'build', 'licenseFormat'
+
+// Apply plugin
+apply plugin: 'forge'
+apply plugin: 'license'
+apply plugin: 'maven'
+apply plugin: 'checkstyle'
+
+version = "1.0"
+group= "tk.coaster3000" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+archivesBaseName = "WorldInfo-Forge"
+
+minecraft {
+    version = "1.7.10-10.13.0.1208"
+    assetDir = "eclipse/assets"
+}
+
+dependencies {
+    compile project(":WorldInfo-Common")
+    testCompile 'junit:junit:4.11'
+    // you may put jars on which you depend on in ./libs
+    // or you may define them like so..
+    //compile "some.group:artifact:version:classifier"
+    //compile "some.group:artifact:version"
+      
+    // real examples
+    //compile 'com.mod-buildcraft:buildcraft:6.0.8:dev'  // adds buildcraft to the dev env
+    //compile 'com.googlecode.efficient-java-matrix-library:ejml:0.24' // adds ejml to the dev env
+
+    // for more info...
+    // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
+    // http://www.gradle.org/docs/current/userguide/dependency_management.html
+
+}
+
+// Define variables
+ext.buildNumber = project.hasProperty("buildNumber") ? buildNumber : '0'
+ext.ciSystem = project.hasProperty("ciSystem") ? ciSystem : 'unknown'
+ext.commit = project.hasProperty("commit") ? commit : 'unknown'
+
+// Minimum version of Java required
+sourceCompatibility = '1.6'
+targetCompatibility = '1.6'
+
+repositories { mavenLocal() }
+
+processResources {
+    inputs.property "version", version
+    inputs.property "mcversion", project.minecraft.version
+
+    // Include in final JAR
+    from 'LICENSE.txt'
+
+    // Replace variables
+    from('src/main/resources/mcmod.info') {
+        expand 'modid': project.name.toLowerCase(),
+                'name': project.name,
+                'description': project.description,
+                'version': version,
+                'buildNumber': buildNumber,
+                'mcversion': minecraft.version,
+                'url': url,
+                'authorList': developer
+    }
+}
+
+
+jar {
+    // Jar shading and packaging configuration
+    from { project(":WorldInfo-Common").sourceSets.main.output.files }
+
+    // JAR manifest configuration
+    manifest.mainAttributes(
+            "Built-By": System.properties['user.name'],
+            "Created-By": System.properties['java.vm.version'] + " (" + System.properties['java.vm.vendor'] + ")",
+            "Implementation-Title": name,
+            "Implementation-Version": version + "+" + ciSystem + "-b" + buildNumber + ".git-" + commit,
+            "Implementation-Vendor": url)
+}
+
+// License header formatting
+license {
+    ext.name = project.name
+    ext.organization = project.developer
+    ext.url = project.url
+    ext.year = project.inceptionYear
+    exclude "**/*.info"
+    exclude "**/*.json"
+    exclude "assets/**"
+    header new File(getProjectDir(), "HEADER.txt")
+    sourceSets = project.sourceSets
+    ignoreFailures false
+    strictCheck true
+}
+
+checkstyle {
+    configProperties = [
+            "name" : project.name,
+            "organization" : project.developer,
+            "url" : project.url,
+            "year" : project.inceptionYear
+    ]
+    configFile = new File(getProjectDir(),"checkstyle.xml")
+}
+tasks.reobf.dependsOn "check"
+
+// Source compiler configuration
+tasks.withType(JavaCompile) {
+    options.compilerArgs += [ '-Xlint:all', '-Xlint:-path' ]
+    options.deprecation = true
+    options.encoding = 'utf8'
+}
