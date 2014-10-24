@@ -30,6 +30,7 @@
     <!-- Checks for whitespace                               -->
     <!-- See http://checkstyle.sf.net/config_whitespace.html -->
     <module name="TreeWalker">
+        <property name="tabWidth" value="1"/>
         <module name="OuterTypeFilename"/>
         <module name="IllegalTokenText">
             <property name="tokens" value="STRING_LITERAL, CHAR_LITERAL"/>
@@ -117,7 +118,7 @@
                      value="Local variable name ''{0}'' must match pattern ''{1}''."/>
         </module>
         <module name="ClassTypeParameterName">
-            <property name="format" value="(^[A-Z][0-9]?)$|([A-Z][a-zA-Z0-9]*[T]$)"/>
+            <property name="format" value="(^[A-Z][0-9]?)$|([A-Z][a-zA-Z0-9]*[T][0-9]?$)"/>
             <message key="name.invalidPattern"
                      value="Class type name ''{0}'' must match pattern ''{1}''."/>
         </module>
