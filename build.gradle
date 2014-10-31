@@ -90,7 +90,7 @@ processResources {
 
 jar {
     // Jar shading and packaging configuration
-    from { project(":WorldInfo-Common").sourceSets.main.output.files }
+    from { project("WorldInfo-Common").sourceSets.main.output.files }
 
     // JAR manifest configuration
     manifest.mainAttributes(
@@ -110,7 +110,7 @@ license {
     exclude "**/*.info"
     exclude "**/*.json"
     exclude "assets/**"
-    header new File(getProjectDir(), "HEADER.txt")
+    header new File(project("WorldInfo-Common").getProjectDir(), "HEADER.txt")
     sourceSets = project.sourceSets
     ignoreFailures false
     strictCheck true
@@ -123,7 +123,7 @@ checkstyle {
             "url" : project.url,
             "year" : project.inceptionYear
     ]
-    configFile = new File(getProjectDir(),"checkstyle.xml")
+    configFile = new File(project("WorldInfo-Common").getProjectDir(),"checkstyle.xml")
 }
 tasks.reobf.dependsOn "check"
 

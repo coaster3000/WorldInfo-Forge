@@ -1,0 +1,4 @@
+[submodule "WorldInfo-Common"]
+	path = WorldInfo-Common
+	url = git@github.com:coaster3000/WorldInfo-Common.git
+	branch = develop
