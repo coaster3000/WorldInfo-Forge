@@ -44,3 +44,7 @@ manifest.mf
 
 .gradle/
 gradle-app.setting
+
+#Custom Stuff
+eclipse/
+rebel.xml
