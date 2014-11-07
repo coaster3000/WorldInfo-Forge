@@ -37,7 +37,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;
 import org.apache.logging.log4j.Logger;
 import tk.coaster3000.worldinfo.common.CommonListener;
-import tk.coaster3000.worldinfo.common.config.Settings;
+import tk.coaster3000.worldinfo.common.config.SettingsProvider;
 import tk.coaster3000.worldinfo.common.data.CommonPacket;
 import tk.coaster3000.worldinfo.common.data.ForgePacket;
 import tk.coaster3000.worldinfo.common.data.ForgePlayer;
@@ -83,7 +83,7 @@ public class WorldInfoMod extends WorldInfo<EntityPlayer, Object, World> {
 	}
 
 	@Override
-	public Settings getSettings() {
+	public SettingsProvider getSettings() {
 		return null;
 	}
 
