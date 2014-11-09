@@ -31,7 +31,6 @@ apply plugin: 'checkstyle'
 
 version = "1.0"
 group= "tk.coaster3000" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
-archivesBaseName = "WorldInfo-Forge"
 
 minecraft {
     version = "1.7.10-10.13.0.1208"
@@ -53,7 +52,6 @@ dependencies {
     // for more info...
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
-
 }
 
 // Define variables
@@ -87,6 +85,24 @@ processResources {
     }
 }
 
+task processIdeaOutput(type: Copy) {
+    inputs.property "version", version
+    inputs.property "mcversion", project.minecraft.version
+
+    // Replace variables
+    from('src/main/resources/mcmod.info') {
+        expand 'modid': project.name.toLowerCase(),
+                'name': project.name,
+                'description': project.description,
+                'version': version,
+                'buildNumber': buildNumber,
+                'mcversion': minecraft.version,
+                'url': url,
+                'authorList': developer
+    }
+
+    into('out/production')
+}
 
 jar {
     // Jar shading and packaging configuration
@@ -110,6 +126,7 @@ license {
     exclude "**/*.info"
     exclude "**/*.json"
     exclude "assets/**"
+    exclude "**/rebel.xml"
     header new File(project("WorldInfo-Common").getProjectDir(), "HEADER.txt")
     sourceSets = project.sourceSets
     ignoreFailures false
