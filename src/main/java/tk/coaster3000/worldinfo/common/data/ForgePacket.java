@@ -29,7 +29,7 @@ import io.netty.buffer.ByteBuf;
 import org.apache.logging.log4j.Logger;
 import tk.coaster3000.worldinfo.WorldInfoMod;
 
-public class ForgePacket extends CommonPacket implements IMessage {
+public class ForgePacket extends CommonPacket<ForgePlayer> implements IMessage {
 
 	private static final Logger log = WorldInfoMod.logger;
 
