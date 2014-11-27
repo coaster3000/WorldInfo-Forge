@@ -230,6 +230,7 @@ public class ForgeSettings extends BasicSettings<HashMap<String, Object>> {
 					break;
 			}
 		}
+		config.save();
 	}
 
 	@Override

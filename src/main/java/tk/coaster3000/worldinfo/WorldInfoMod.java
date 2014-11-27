@@ -29,18 +29,28 @@ import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import cpw.mods.fml.common.event.FMLServerStartingEvent;
+import cpw.mods.fml.common.registry.GameRegistry;
 import cpw.mods.fml.relauncher.Side;
+import io.netty.buffer.ByteBuf;
+import net.minecraft.command.ICommand;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.Item;
 import net.minecraft.world.World;
 import org.apache.logging.log4j.Logger;
+import tk.coaster3000.worldinfo.client.DebugListener;
+import tk.coaster3000.worldinfo.common.DebugCommand;
 import tk.coaster3000.worldinfo.common.config.ForgeSettings;
-import tk.coaster3000.worldinfo.common.data.CommonPacket;
 import tk.coaster3000.worldinfo.common.data.ForgePacket;
 import tk.coaster3000.worldinfo.common.data.ForgePlayer;
 import tk.coaster3000.worldinfo.common.data.ForgeWorld;
+import tk.coaster3000.worldinfo.common.data.ICommonPacket;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Mod(modid = WorldInfoMod.MODID, name = WorldInfoMod.NAME, version = WorldInfoMod.VERSION, canBeDeactivated = true)
-public class WorldInfoMod extends WorldInfo<EntityPlayer, Object, World> {
+public final class WorldInfoMod extends WorldInfo<EntityPlayer, Object, World, ForgePlayer, ForgePacket, ForgeWorld> {
 
 	public static final String MODID = "worldinfo";
 	public static final String VERSION = "1.0";
@@ -55,18 +65,51 @@ public class WorldInfoMod extends WorldInfo<EntityPlayer, Object, World> {
 
 	public static Logger logger;
 
+	public static Item debugItem = null;
+
+	private DebugListener debugListener;
+
+	private NetworkHandler handler;
+
+	private ForgeListener listener;
+	private final Map<String, ICommand> commands = new HashMap<String, ICommand>();
+
+	public ForgeListener getListener() {
+		return listener;
+	}
 
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
-		logger = event.getModLog();
+		WorldInfoMod.logger = event.getModLog();
 		settings = new ForgeSettings(event.getSuggestedConfigurationFile());
 		loadSettings();
+
+		handler = new NetworkHandler();
+	}
+
+	@EventHandler
+	public void onServerInit(FMLServerStartingEvent event) {
+		DebugCommand cmd = new DebugCommand();
+
+		commands.put(cmd.getCommandName(), cmd);
+		event.registerServerCommand(cmd);
 	}
 
 	@EventHandler
 	public void onInit(FMLInitializationEvent event) {
+		this.handler = new NetworkHandler();
 		this.side = event.getSide();
 
+		WorldInfoMod.debugItem = new DebugItem().setTextureName(String.format("%s:debug", MODID));
+
+		GameRegistry.registerItem(debugItem, debugItem.getUnlocalizedName());
+
+		debugListener = new DebugListener();
+		debugListener.register();
+
+		listener = new ForgeListener();
+
+		listener.register();
 	}
 
 	@EventHandler
@@ -81,11 +124,29 @@ public class WorldInfoMod extends WorldInfo<EntityPlayer, Object, World> {
 
 	@Override
 	public ForgePacket wrapPacket(Object packet) {
-		return null;
+		if (packet instanceof ForgePacket)
+			return (ForgePacket) packet;
+		else if (packet instanceof ICommonPacket)
+			return wrapPacket((ICommonPacket) packet);
+		else
+			throw new IllegalArgumentException("Not a valid packet object type to wrap!");
 	}
 
-	public ForgePacket wrapPacket(CommonPacket packet) {
-		return new ForgePacket(packet);
+	public ForgePacket wrapPacket(final ICommonPacket packet) {
+		if (packet instanceof ForgePacket)
+			return (ForgePacket) packet;
+
+		return new ForgePacket(packet) {
+			byte[] data = packet.getData();
+
+			public void fromBytes(ByteBuf buf) {
+				data = buf.array();
+			}
+
+			public byte[] getData() {
+				return data;
+			}
+		};
 	}
 
 	@Override
@@ -96,6 +157,10 @@ public class WorldInfoMod extends WorldInfo<EntityPlayer, Object, World> {
 	@Override
 	public ForgeWorld wrapWorld(World world) {
 		return new ForgeWorld(world);
+	}
+
+	public NetworkHandler getNetworkHandler() {
+		return handler;
 	}
 
 	public Side getSide() {
