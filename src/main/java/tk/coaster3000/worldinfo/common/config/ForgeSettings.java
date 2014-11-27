@@ -37,7 +37,7 @@ import java.util.Map;
 
 public class ForgeSettings extends BasicSettings<HashMap<String, Object>> {
 
-	static final Map<Class<?>, Type> clsToType;
+	private static final Map<Class<?>, Type> clsToType;
 
 	static {
 		clsToType = new HashMap<Class<?>, Type>();
@@ -74,8 +74,8 @@ public class ForgeSettings extends BasicSettings<HashMap<String, Object>> {
 		for (Property<?> rawProperty : getProperties()) {
 			final String cat;
 			final String key;
-			if (rawProperty instanceof BaseProperty) {
-				cat = ((BaseProperty) rawProperty).getPath();
+			if (rawProperty instanceof BaseProperty<?>) {
+				cat = ((BaseProperty<?>) rawProperty).getPath();
 				key = rawProperty.getKey();
 			} else {
 				final String t = rawProperty.getKey();
@@ -83,7 +83,7 @@ public class ForgeSettings extends BasicSettings<HashMap<String, Object>> {
 				cat = t.substring(0, t.lastIndexOf(PATH_SEP));
 			}
 
-			Type t = null;
+			Type t;
 			if (clsToType.containsKey(rawProperty.getValueType())) t = clsToType.get(rawProperty.getValueType());
 			else {
 				WorldInfoMod.logger.error(String.format("Could not find a type match for '%s'!", rawProperty.getClass().getName()));
@@ -152,7 +152,7 @@ public class ForgeSettings extends BasicSettings<HashMap<String, Object>> {
 			final String key;
 
 			if (rawProperty instanceof BaseProperty) {
-				cat = ((BaseProperty) rawProperty).getPath();
+				cat = ((BaseProperty<?>) rawProperty).getPath();
 				key = rawProperty.getKey();
 			} else {
 				final String t = rawProperty.getKey();
@@ -180,13 +180,13 @@ public class ForgeSettings extends BasicSettings<HashMap<String, Object>> {
 					else data.set(node, config.getString(key, cat, ((Property<String>)rawProperty).getDefaultValue(), rawProperty.getComment()));
 					break;
 				case INTEGER:
-					if (rawProperty.getClass().equals(Short.class))
+					if (rawProperty.getValueType().equals(Short.class))
 						data.set(node, (short) (config.get(
 								key,
 								cat,
 								((Property<Short>) rawProperty).getDefaultValue(),
 								rawProperty.getComment()).getInt()));
-					else if (rawProperty.getClass().equals(Long.class))
+					else if (rawProperty.getValueType().equals(Long.class))
 						data.set(node, (long)(config.get(
 								key,
 								cat,
@@ -200,7 +200,7 @@ public class ForgeSettings extends BasicSettings<HashMap<String, Object>> {
 								rawProperty.getComment()).getInt());
 					break;
 				case DOUBLE:
-					if (rawProperty.getClass().equals(Float.class))
+					if (rawProperty.getValueType().equals(Float.class))
 						data.set(node, (float) (config.get(
 								key,
 								cat,
