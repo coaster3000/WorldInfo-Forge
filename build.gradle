@@ -85,6 +85,7 @@ processResources {
     }
 }
 
+/* It is highly recommended to add this to the ide's actions before run to allow mod information to be present! */
 task processIdeaOutput(type: Copy) {
     inputs.property "version", version
     inputs.property "mcversion", project.minecraft.version

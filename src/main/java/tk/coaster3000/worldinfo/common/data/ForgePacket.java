@@ -26,35 +26,32 @@ package tk.coaster3000.worldinfo.common.data;
 
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import io.netty.buffer.ByteBuf;
-import org.apache.logging.log4j.Logger;
-import tk.coaster3000.worldinfo.WorldInfoMod;
+import tk.coaster3000.worldinfo.util.LogicUtil;
 
-public class ForgePacket extends CommonPacket<ForgePlayer> implements IMessage {
+public abstract class ForgePacket extends CommonPacket implements IMessage {
 
-	private static final Logger log = WorldInfoMod.logger;
-
-	public ForgePacket(String channel, byte id, byte[] data) {
-		super(channel, id, data);
+	public ForgePacket() {
+		channel = "";
 	}
 
-	public ForgePacket(CommonPacket packet) {
-		id = packet.id;
-		channel = packet.channel;
-		data = packet.data;
+	public ForgePacket(String channel, byte id) {
+		super(channel, id);
 	}
 
-	@Override
-	public void fromBytes(ByteBuf buf) {
-		id = buf.readByte();
-		int len = buf.readInt();
-		data = new byte[len];
-		buf.readBytes(data, 0, len);
+	public ForgePacket(ICommonPacket packet) {
+		channel = packet.getChannel();
+		id = packet.getId();
 	}
 
-	@Override
+	public void setChannel(String channel) {
+		this.channel = channel;
+	}
+
 	public void toBytes(ByteBuf buf) {
-		//FIXME: BREAKPOINT ME BITCH	buf.writeByte(id).writeInt(getDataLength()).writeBytes(data);
-		log.debug("LOG00000:ByteBuf supplies value's by default: " + buf);
-		log.debug("LOG00020:ByteBuf now reads as this: " + buf); //FIXME: BREAKPOINT ME BITCH
+//		WorldInfoMod.logger.info(String.format("%n Packet Type: %s %n Current data length: %d %n Current Data: %s",
+//				this.getClass().getSimpleName() ,
+//				getData().length,
+//				Arrays.toString(getData())));
+		buf.writeBytes(LogicUtil.requireNonNull(getData(), "Null object's cannot be placed here!"));
 	}
 }

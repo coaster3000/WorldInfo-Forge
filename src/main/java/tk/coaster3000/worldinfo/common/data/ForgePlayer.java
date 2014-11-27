@@ -27,33 +27,51 @@ package tk.coaster3000.worldinfo.common.data;
 import cpw.mods.fml.relauncher.Side;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ChatComponentText;
 import tk.coaster3000.worldinfo.WorldInfoMod;
+import tk.coaster3000.worldinfo.util.Validate;
+
+import java.util.UUID;
 
 public class ForgePlayer extends CommonPlayer<ForgeWorld> {
 	private final EntityPlayer player;
 
 	public ForgePlayer(EntityPlayer player) {
+		Validate.notNull(player);
 		this.player = player;
 	}
 
-	@Override
 	public void sendMessage(String message) {
 		player.addChatComponentMessage(new ChatComponentText(message));
 	}
 
-	@Override
-	public void sendPacket(CommonPacket packet) {
+	public void sendPacket(ICommonPacket packet) {
 		ForgePacket pack = WorldInfoMod.instance.wrapPacket(packet);
-		if (WorldInfoMod.instance.getSide() == Side.CLIENT) WorldInfoMod.instance.getPacketChannel().sendToServer(pack);
+		if (WorldInfoMod.instance.getSide() == Side.CLIENT)
+			WorldInfoMod.instance.getNetworkHandler().getChannel().sendToServer(pack);
 		else if (player instanceof EntityPlayerMP)
-			WorldInfoMod.instance.getPacketChannel().sendTo(pack, (EntityPlayerMP) player);
+			WorldInfoMod.instance.getNetworkHandler().getChannel().sendTo(pack, (EntityPlayerMP) player);
 		else
-			WorldInfoMod.logger.error("Mod initialized incorrectly. Side is server yet player object is not EntityPlayerMP. \n Please contact the "
-					+ "mod author about this error.");
+			WorldInfoMod.logger.error(
+					String.format(String.format(
+							"Mod initialized incorrectly. Side is server yet player object is not EntityPlayerMP."
+									+ " %%n Please contact the mod author "
+									+ "about this error.")));
 	}
 
-	@Override
+	public boolean isOperator() {
+		return MinecraftServer.getServer().getConfigurationManager().func_152596_g(this.player.getGameProfile());
+	}
+
+	public String getName() {
+		return player.getCommandSenderName();
+	}
+
+	public UUID getUID() {
+		return player.getGameProfile().getId();
+	}
+
 	public ForgeWorld getWorld() {
 		return WorldInfoMod.instance.wrapWorld(player.getEntityWorld());
 	}

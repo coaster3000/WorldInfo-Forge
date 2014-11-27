@@ -24,29 +24,31 @@
  */
 package tk.coaster3000.worldinfo.common.data;
 
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;
-import org.apache.commons.io.FileUtils;
+import tk.coaster3000.worldinfo.WorldInfoMod;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.UUID;
 
-public class ForgeWorld extends CommonWorld {
-	protected World world;
-	private File worldFolder;
-	private File uidFile;
+public class ForgeWorld extends CommonWorld<ForgePlayer> {
+	private final World world;
+	private final File worldFolder;
+	private final File uidFile;
+
+	public File getUidFile() {
+		return uidFile;
+	}
+
+	protected void handleException(Exception ex) {
+		WorldInfoMod.logger.error(ex); //TODO: Implement stack trace filtering...
+	}
 
 	public ForgeWorld(World world) {
 		this.world = world;
 		worldFolder = world.getSaveHandler().getWorldDirectory();
-		uidFile = new File(worldFolder, "uid");
-	}
-
-	@Override
-	protected void generateUID() {
-		this.uid = UUID.randomUUID();
-		save();
+		uidFile = new File(worldFolder, "uid.dat");
+		name = world.getSaveHandler().getWorldDirectoryName();
+		load();
 	}
 
 	@Override
@@ -54,22 +56,22 @@ public class ForgeWorld extends CommonWorld {
 		return worldFolder;
 	}
 
-	public void load() {
-		try {
-			this.uid = UUID.fromString(FileUtils.readFileToString(uidFile));
-		} catch (FileNotFoundException e) {
-			generateUID();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+	public long getSeed() {
+		return world.getSeed();
 	}
 
-	public void save() {
-		try {
-			FileUtils.writeStringToFile(uidFile, this.uid.toString());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+	public ForgePlayer[] getPlayers() {
+		EntityPlayer[] players = (EntityPlayer[]) world.playerEntities.toArray();
+
+		ForgePlayer[] forgePlayers = new ForgePlayer[players.length];
+
+		for (int i = 0; i < players.length; i++)
+			forgePlayers[i] = new ForgePlayer(players[i]);
+
+		return forgePlayers;
 	}
 
+	public boolean hasPlayer(ForgePlayer player) {
+		return world.getPlayerEntityByName(player.getName()) != null;
+	}
 }
