@@ -49,6 +49,7 @@ public class ForgeSettings extends BasicSettings<HashMap<String, Object>> {
 		clsToType.put(Short.class, Type.INTEGER);
 		clsToType.put(Long.class, Type.INTEGER);
 		clsToType.put(Mode.class, Type.STRING);
+		clsToType.put(Boolean.class, Type.BOOLEAN);
 	}
 
 	private static final String PATH_SEP = ".";
@@ -121,17 +122,17 @@ public class ForgeSettings extends BasicSettings<HashMap<String, Object>> {
 						break;
 					default:
 						WorldInfoMod.logger.error(String.format(
-								"The property was not handled correctly. " +
-										"The property is a number property and " +
-										"the forge property type was set to '%s'!",
+								"The property was not handled correctly. "
+										+ "The property is a number property and "
+										+ "the forge property type was set to '%s'!",
 								t.name()));
 						break;
 				}
 			} else if (t == Type.BOOLEAN) {
 				prop.set(((Property<Boolean>)rawProperty).getValue(this));
 			} else {
-				WorldInfoMod.logger.error("ForgeSettings Handler:Config saving system could not find a valid save method. " +
-						"Contact the developer about this error as soon as possible!");
+				WorldInfoMod.logger.error("ForgeSettings Handler:Config saving system could not find a valid save method. "
+						+ "Contact the developer about this error as soon as possible!");
 				continue;
 			}
 

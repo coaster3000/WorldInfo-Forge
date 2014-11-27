@@ -26,18 +26,14 @@ package tk.coaster3000.worldinfo;
 
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
-import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
-import cpw.mods.fml.common.network.NetworkRegistry;
-import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import cpw.mods.fml.relauncher.Side;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.world.World;
 import org.apache.logging.log4j.Logger;
-import tk.coaster3000.worldinfo.common.CommonListener;
-import tk.coaster3000.worldinfo.common.config.SettingsProvider;
+import tk.coaster3000.worldinfo.common.config.ForgeSettings;
 import tk.coaster3000.worldinfo.common.data.CommonPacket;
 import tk.coaster3000.worldinfo.common.data.ForgePacket;
 import tk.coaster3000.worldinfo.common.data.ForgePlayer;
@@ -45,6 +41,7 @@ import tk.coaster3000.worldinfo.common.data.ForgeWorld;
 
 @Mod(modid = WorldInfoMod.MODID, name = WorldInfoMod.NAME, version = WorldInfoMod.VERSION, canBeDeactivated = true)
 public class WorldInfoMod extends WorldInfo<EntityPlayer, Object, World> {
+
 	public static final String MODID = "worldinfo";
 	public static final String VERSION = "1.0";
 	public static final String NAME = "WorldInfo";
@@ -52,29 +49,24 @@ public class WorldInfoMod extends WorldInfo<EntityPlayer, Object, World> {
 	@Mod.Instance(MODID)
 	public static WorldInfoMod instance;
 
-	private SimpleNetworkWrapper channel;
 	private Side side;
+
+	private ForgeSettings settings;
 
 	public static Logger logger;
 
-	@SidedProxy(modId = MODID,
-			clientSide = "tk.coaster3000.worldinfo.client.ClientListener",
-			serverSide = "tk.coaster3000.worldinfo.server.ServerListener")
-	static CommonListener listener;
 
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
 		logger = event.getModLog();
-
+		settings = new ForgeSettings(event.getSuggestedConfigurationFile());
 		loadSettings();
 	}
 
 	@EventHandler
 	public void onInit(FMLInitializationEvent event) {
-		this.channel = NetworkRegistry.INSTANCE.newSimpleChannel("world_info");
 		this.side = event.getSide();
 
-		listener.register();
 	}
 
 	@EventHandler
@@ -83,8 +75,8 @@ public class WorldInfoMod extends WorldInfo<EntityPlayer, Object, World> {
 	}
 
 	@Override
-	public SettingsProvider getSettings() {
-		return null;
+	public ForgeSettings getSettings() {
+		return settings;
 	}
 
 	@Override
@@ -104,10 +96,6 @@ public class WorldInfoMod extends WorldInfo<EntityPlayer, Object, World> {
 	@Override
 	public ForgeWorld wrapWorld(World world) {
 		return new ForgeWorld(world);
-	}
-
-	public SimpleNetworkWrapper getPacketChannel() {
-		return channel;
 	}
 
 	public Side getSide() {
