@@ -32,7 +32,7 @@ import tk.coaster3000.worldinfo.common.data.ForgePacket;
 import static tk.coaster3000.worldinfo.WorldInfo.PLUGIN_CHANNEL;
 
 public class WISeedPacket extends ForgePacket {
-	public static final byte discriminatorID = 3;
+	public static final byte discriminatorID = 4;
 
 	private long seed = 0;
 

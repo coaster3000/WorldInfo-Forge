@@ -24,17 +24,18 @@
  */
 package tk.coaster3000.worldinfo;
 
+import cpw.mods.fml.client.FMLClientHandler;
 import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
-import net.minecraft.client.Minecraft;
 import tk.coaster3000.worldinfo.common.config.BasicSettings;
 import tk.coaster3000.worldinfo.common.config.Mode;
 import tk.coaster3000.worldinfo.common.data.ForgePacket;
 import tk.coaster3000.worldinfo.common.data.ForgePlayer;
+import tk.coaster3000.worldinfo.common.packets.WICustomNamePacket;
 import tk.coaster3000.worldinfo.common.packets.WINamePacket;
 import tk.coaster3000.worldinfo.common.packets.WIPrimaryIDPacket;
 import tk.coaster3000.worldinfo.common.packets.WISeedPacket;
@@ -55,29 +56,40 @@ public final class NetworkHandler {
 		channel.registerMessage(PrimaryIDHandler.class, WIPrimaryIDPacket.class, WIPrimaryIDPacket.discriminatorID, Side.SERVER);
 
 		//UID packets
-		channel.registerMessage(UIDHandler.class, WIUidPacket.class, WIUidPacket.discriminatorID, Side.SERVER);
-		channel.registerMessage(UIDHandler.class, WIUidPacket.class, WIUidPacket.discriminatorID, Side.CLIENT);
-
+		if (WorldInfoMod.instance.getSettings().getProperty(BasicSettings.UIDPacketEnabled)) {
+			channel.registerMessage(UIDHandler.class, WIUidPacket.class, WIUidPacket.discriminatorID, Side.SERVER);
+			channel.registerMessage(UIDHandler.class, WIUidPacket.class, WIUidPacket.discriminatorID, Side.CLIENT);
+		}
 		//Name Packets
-		channel.registerMessage(NameHandler.class, WINamePacket.class, WINamePacket.discriminatorID, Side.SERVER);
-		channel.registerMessage(NameHandler.class, WINamePacket.class, WINamePacket.discriminatorID, Side.CLIENT);
+		if (WorldInfoMod.instance.getSettings().getProperty(BasicSettings.worldNamePacketEnabled)) {
+			channel.registerMessage(NameHandler.class, WINamePacket.class, WINamePacket.discriminatorID, Side.SERVER);
+			channel.registerMessage(NameHandler.class, WINamePacket.class, WINamePacket.discriminatorID, Side.CLIENT);
+		}
+
+		//Custom Name Packets
+		if (WorldInfoMod.instance.getSettings().getProperty(BasicSettings.customNamePacketEnabled)) {
+			channel.registerMessage(CustomNameHandler.class, WICustomNamePacket.class, WICustomNamePacket.discriminatorID, Side.SERVER);
+			channel.registerMessage(CustomNameHandler.class, WICustomNamePacket.class, WICustomNamePacket.discriminatorID, Side.CLIENT);
+		}
 
 		//Seed packets
-		channel.registerMessage(SeedHandler.class, WISeedPacket.class, WISeedPacket.discriminatorID, Side.CLIENT);
-		channel.registerMessage(SeedHandler.class, WISeedPacket.class, WISeedPacket.discriminatorID, Side.SERVER);
-
+		if (WorldInfoMod.instance.getSettings().getProperty(BasicSettings.seedPacketEnabled)) {
+			channel.registerMessage(SeedHandler.class, WISeedPacket.class, WISeedPacket.discriminatorID, Side.CLIENT);
+			channel.registerMessage(SeedHandler.class, WISeedPacket.class, WISeedPacket.discriminatorID, Side.SERVER);
+		}
 	}
 
 	public static class PrimaryIDHandler implements IMessageHandler<WIPrimaryIDPacket, ForgePacket> {
 		@Override
 		public ForgePacket onMessage(WIPrimaryIDPacket message, MessageContext ctx) {
 			ForgePlayer player;
+
 			if (WorldInfoMod.instance.getSide() == Side.CLIENT)
-				player = grabClientPlayer(ctx);
+				player = grabClientPlayer();
 			else
 				player = grabServerPlayer(ctx);
 
-			WorldInfoMod.logger.info(String.format("Request Recieved from \"%s\" and will now respond accordingly...", player.getName()));
+			WorldInfoMod.logger.info(String.format("Request Received from \"%s\" and will now respond accordingly...", player.getName()));
 
 			String id;
 			try {
@@ -85,9 +97,8 @@ public final class NetworkHandler {
 				switch (m) {
 					case UUID:
 						return new WIUidPacket(player.getWorld().getUID().toString());
-					case File:
-						id = player.getWorld().getCustomName();
-						break;
+					case CustomName:
+						return new WICustomNamePacket(player.getWorld().getCustomName());
 					case Name:
 						return new WINamePacket(player.getWorld().getName());
 					case Seed:
@@ -109,7 +120,7 @@ public final class NetworkHandler {
 		public WIUidPacket onMessage(WIUidPacket message, MessageContext ctx) {
 			ForgePlayer player;
 			if (WorldInfoMod.instance.getSide() == Side.CLIENT)
-				player = grabClientPlayer(ctx);
+				player = grabClientPlayer();
 			else
 				player = grabServerPlayer(ctx);
 
@@ -137,7 +148,7 @@ public final class NetworkHandler {
 		public WISeedPacket onMessage(WISeedPacket message, MessageContext ctx) {
 			ForgePlayer player;
 			if (WorldInfoMod.instance.getSide() == Side.CLIENT)
-				player = grabClientPlayer(ctx);
+				player = grabClientPlayer();
 			else
 				player = grabServerPlayer(ctx);
 
@@ -166,7 +177,7 @@ public final class NetworkHandler {
 		public WINamePacket onMessage(WINamePacket message, MessageContext ctx) {
 			ForgePlayer player;
 			if (WorldInfoMod.instance.getSide() == Side.CLIENT)
-				player = grabClientPlayer(ctx);
+				player = grabClientPlayer();
 			else
 				player = grabServerPlayer(ctx);
 
@@ -192,8 +203,8 @@ public final class NetworkHandler {
 
 
 	@SideOnly(Side.CLIENT)
-	static ForgePlayer grabClientPlayer(MessageContext ctx) {
-		return WorldInfoMod.instance.wrapPlayer(Minecraft.getMinecraft().thePlayer);
+	static ForgePlayer grabClientPlayer() {
+		return WorldInfoMod.instance.wrapPlayer(FMLClientHandler.instance().getClientPlayerEntity());
 	}
 
 	@SideOnly(Side.SERVER)
@@ -201,4 +212,32 @@ public final class NetworkHandler {
 		return WorldInfoMod.instance.wrapPlayer(ctx.getServerHandler().playerEntity);
 	}
 
+	public static class CustomNameHandler implements IMessageHandler<WICustomNamePacket, WICustomNamePacket> {
+		@Override
+		public WICustomNamePacket onMessage(WICustomNamePacket message, MessageContext ctx) {
+			ForgePlayer player;
+			if (WorldInfoMod.instance.getSide() == Side.CLIENT)
+				player = grabClientPlayer();
+			else
+				player = grabServerPlayer(ctx);
+
+			switch (ctx.side) {
+				case CLIENT:
+					player.sendMessage(String.format("World Name: %s", message.getMessage()));
+					return null;
+				case SERVER:
+
+					try {
+						return new WICustomNamePacket(player.getWorld().getCustomName());
+					} catch (Exception e) {
+						WorldInfoMod.logger.error("An error occurred while generating the world UID packet information for player...", e);
+						return null;
+					}
+				default:
+					WorldInfoMod.logger.error("Side case was not caught. It fell through!", new Exception());
+			}
+
+			return null;
+		}
+	}
 }

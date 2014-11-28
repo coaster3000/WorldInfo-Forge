@@ -53,7 +53,7 @@ import java.util.Map;
 public final class WorldInfoMod extends WorldInfo<EntityPlayer, Object, World, ForgePlayer, ForgePacket, ForgeWorld> {
 
 	public static final String MODID = "worldinfo";
-	public static final String VERSION = "1.0";
+	public static final String VERSION = "1.0.0";
 	public static final String NAME = "WorldInfo";
 
 	@Mod.Instance(MODID)
@@ -136,7 +136,7 @@ public final class WorldInfoMod extends WorldInfo<EntityPlayer, Object, World, F
 		if (packet instanceof ForgePacket)
 			return (ForgePacket) packet;
 
-		return new ForgePacket(packet) {
+		return new ForgePacket(packet) { //TODO: Somehow make this actual class objects
 			byte[] data = packet.getData();
 
 			public void fromBytes(ByteBuf buf) {
